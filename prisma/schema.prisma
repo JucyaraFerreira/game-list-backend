@@ -1,0 +1,52 @@
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum GameStatus {
+  WISHLIST
+  PLAYING
+  PAUSED
+  COMPLETED
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  games     Game[]
+}
+
+// a plataforma vai ser guardada apenas uma vez e cada jogo vai apontar para uma. 
+// quando o jogo for cadastrado o código vai criar a plataforma se ela ainda n existir
+model Platform {
+  id    Int    @id @default(autoincrement())
+  name  String @unique
+  games Game[]
+}
+
+model Game {
+  id        String      @id @default(uuid())
+  title     String
+  developer String?
+  genre     String?
+  status    GameStatus?
+  favorite  Boolean     @default(false)
+  rating    Int?
+  coverUrl  String?
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  //guarda de quem é o jogo e qual plataforma é o jogo
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  platformId Int
+  platform   Platform @relation(fields: [platformId], references: [id])
+}
