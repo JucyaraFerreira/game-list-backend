@@ -12,13 +12,16 @@ import {
     HttpStatus,
     Patch,
 } from '@nestjs/common';
-import { ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiCookieAuth, ApiOperation, ApiQuery, ApiTags, ApiUnauthorizedResponse } from '@nestjs/swagger';
 import { GamesService } from './games.service';
 import { CreateGameDto } from './dto/create-game.dto';
 import { UpdateRatingDto } from './dto/update-rating.dto';
 import { UpdateStatusDto } from './dto/update-status.dto';
 
 @ApiTags('games')
+@ApiBearerAuth('sessionBearer')
+@ApiCookieAuth('sessionCookie')
+@ApiUnauthorizedResponse({ description: 'Sessão inválida ou expirada.' })
 @Controller('games')
 export class GamesController {
     constructor (
