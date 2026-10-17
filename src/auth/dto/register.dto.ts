@@ -1,7 +1,7 @@
 import { Transform } from 'class-transformer';
 import { IsEmail, IsString, Matches, MaxLength, Validate } from 'class-validator';
-import { UnicodeLength } from './unicode-length.validator';
-import { MaxPasswordBytes } from './password-bytes.validator';
+import { UnicodeLength } from '../validators/unicode-length.validator';
+import { MaxPasswordBytes } from '../validators/password-bytes.validator';
 
 export class RegisterDto {
   @Transform(({ value }: { value: unknown }) => typeof value === 'string' ? value.trim() : value)

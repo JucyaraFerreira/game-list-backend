@@ -1,5 +1,5 @@
 import { PasswordService } from '../src/auth/password.service';
-import { isWithinPasswordByteLimit } from '../src/auth/dto/password-bytes.validator';
+import { isWithinPasswordByteLimit } from '../src/auth/validators/password-bytes.validator';
 import { isEmail } from 'class-validator';
 
 type PlatformSeedArgs = {

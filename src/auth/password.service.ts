@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
-import { isWithinPasswordByteLimit } from './dto/password-bytes.validator';
+import { isWithinPasswordByteLimit } from './validators/password-bytes.validator';
 
 export function isBcryptHash(hash: string): boolean {
   return (

@@ -1,6 +1,6 @@
 import { Transform } from 'class-transformer';
 import { IsNotEmpty, IsString, MaxLength, Validate } from 'class-validator';
-import { MaxPasswordBytes } from './password-bytes.validator';
+import { MaxPasswordBytes } from '../validators/password-bytes.validator';
 
 export class LoginDto {
   @Transform(({ value }: { value: unknown }) => typeof value === 'string' ? value.trim().toLowerCase() : value)
