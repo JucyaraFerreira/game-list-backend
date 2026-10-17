@@ -16,12 +16,26 @@ enum GameStatus {
 }
 
 model User {
-  id        String   @id @default(uuid())
+  id        String    @id @default(uuid())
   name      String
-  email     String   @unique
+  email     String    @unique
+  username  String?   @unique
   password  String
-  createdAt DateTime @default(now())
+  createdAt DateTime  @default(now())
   games     Game[]
+  sessions  Session[]
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  userId    String
+  tokenHash String   @unique
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
 }
 
 // a plataforma vai ser guardada apenas uma vez e cada jogo vai apontar para uma. 
