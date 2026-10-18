@@ -2,7 +2,7 @@
 
 API REST do app **Game List** (biblioteca pessoal de jogos).
 
-**Stack:** NestJS 12, TypeScript, Prisma 7.10.0, PostgreSQL (Neon), Swagger.
+**Stack:** NestJS 12, TypeScript, bcrypt 6.0.0, Prisma 7.10.0, PostgreSQL (Neon), Swagger.
 
 ## Como rodar (passo a passo)
 
@@ -33,6 +33,8 @@ Abra o `.env` e troque o valor pela string recebida, **inteira**, entre aspas du
 
 ```env
 DATABASE_URL="COLE_AQUI_A_STRING_RECEBIDA"
+AUTH_ALLOWED_ORIGINS=http://localhost:8081,http://127.0.0.1:8081,http://localhost:3000,http://127.0.0.1:3000
+AUTH_COOKIE_SAME_SITE=lax
 ```
 
 - Sem espaços ao redor do `=` e sem vírgula no final.
@@ -102,19 +104,48 @@ SELECT id, name, email FROM "User";
 
 ## Rotas
 
-| Método | Rota | Descrição |
-|---|---|---|
-| GET | `/platforms` | Lista as plataformas |
-| POST | `/games?userId=` | Cadastra um jogo |
-| GET | `/games?userId=` | Lista os jogos do usuário |
-| PATCH | `/games/:id/status?userId=` | Altera o status |
-| PATCH | `/games/:id/favorite?userId=` | Favorita/desfavorita (alterna) |
-| PATCH | `/games/:id/rating?userId=` | Altera a nota (0 a 5) |
-| DELETE | `/games/:id?userId=` | Exclui o jogo `(204)` |
+As rotas de jogos exigem autenticação. O proprietário é identificado pela sessão; não envie `userId` na URL ou no corpo.
 
-Erros: `400` (validação) e `404` (jogo inexistente ou de outro usuário).
+| Método | Rota | Acesso | Descrição |
+|---|---|---|---|
+| POST | `/auth/register` | Público | Cria conta; retorna `202` com a mesma mensagem para contas novas e duplicadas. Não inicia sessão. |
+| POST | `/auth/login` | Público | Entra com e-mail ou nome de usuário. Por padrão define cookie HttpOnly; use `X-Auth-Transport: bearer` para receber token Bearer no corpo. |
+| GET | `/auth/me` | Sessão | Retorna o usuário autenticado e a expiração da sessão. |
+| POST | `/auth/logout` | Público | Revoga a sessão apresentada e limpa o cookie; retorna `204`. |
+| GET | `/platforms` | Público | Lista as plataformas disponíveis. |
+| POST | `/games` | Sessão | Adiciona um jogo à biblioteca do usuário; retorna `201`. |
+| GET | `/games` | Sessão | Lista os jogos da biblioteca do usuário. |
+| GET | `/games/:id` | Sessão | Consulta um jogo da própria biblioteca. |
+| PATCH | `/games/:id` | Sessão | Atualiza os metadados do jogo. |
+| PATCH | `/games/:id/status` | Sessão | Atualiza ou limpa o status do jogo. |
+| PATCH | `/games/:id/favorite` | Sessão | Alterna favorito. |
+| PATCH | `/games/:id/rating` | Sessão | Atualiza a nota (0 a 5). |
+| DELETE | `/games/:id` | Sessão | Remove o jogo da biblioteca; retorna `204`. |
 
-Para testar no Swagger, use o `userId` do usuário de teste (`teste@gamelist.com`).
-O UUID está na tabela `User`, no painel do Neon.
+Para sessão por cookie, o cliente deve enviar cookies nas requisições. Clientes nativos usam o token retornado pelo login com `Authorization: Bearer <token>`. A sessão expira após 30 dias.
 
-Dica de JSON: texto entre aspas duplas, vírgula entre os campos e **nunca** depois do último.
+Respostas comuns: `400` (validação), `401` (sessão ou credenciais inválidas), `403` (origem/CSRF), `404` (jogo ausente ou de outra conta), `409` (jogo duplicado) e `429` (limite de tentativas).
+
+No Swagger em `/api`, faça login e configure a autenticação correspondente antes de chamar as rotas protegidas.
+
+## Docker para testes
+
+O arquivo `compose.test.yml` inicia somente um PostgreSQL local para testes. O banco usa armazenamento temporário em memória (`tmpfs`) e uma porta local aleatória; os dados desaparecem quando o contêiner é removido. Não use a `DATABASE_URL` do Neon neste ambiente.
+
+Consultar o serviço e a porta escolhida:
+
+```powershell
+docker compose -f compose.test.yml ps
+docker compose -f compose.test.yml port postgres 5432
+```
+
+Ao terminar, remova o contêiner e limpe as variáveis da sessão do terminal:
+
+```powershell
+docker compose -f compose.test.yml down
+Remove-Item Env:AUTH_TEST_POSTGRES_PASSWORD, Env:AUTH_TEST_RUN_ID
+```
+
+## Frontend
+
+Repositório do frontend: **[[REPO](https://github.com/Demicouto/GameList)]**

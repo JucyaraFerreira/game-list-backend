@@ -1,38 +1,37 @@
 import 'dotenv/config';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '../src/generated/prisma/client';
-
-const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
-const prisma = new PrismaClient({ adapter });
+import { seedDatabase } from './seed-data';
 
 async function main() {
-  const platforms = ['PC', 'PlayStation 5', 'Xbox Series', 'Nintendo Switch', 'Mobile'];
-
-  for (const name of platforms) {
-    await prisma.platform.upsert({
-      where: { name },
-      update: {},
-      create: { name },
+  let prisma: PrismaClient | undefined;
+  try {
+    const connectionString = process.env.DATABASE_URL;
+    if (!connectionString) throw new Error('Configuração de banco ausente.');
+    prisma = new PrismaClient({
+      adapter: new PrismaPg({ connectionString }),
+      log: [],
+      errorFormat: 'minimal',
     });
+    await seedDatabase(prisma, {
+      // Conta de exemplo para desenvolvimento local.
+      name: 'Jogador Demo',
+      username: 'jogador_demo',
+      email: 'jogador@example.com',
+      password: 'GameListDemo123!',
+    });
+    console.info('Seed concluído.');
+  } catch {
+    console.error('Não foi possível concluir o seed. Verifique a configuração e a conexão.');
+    process.exitCode = 1;
+  } finally {
+    try {
+      await prisma?.$disconnect();
+    } catch {
+      console.error('Não foi possível encerrar a conexão do seed.');
+      process.exitCode = 1;
+    }
   }
-
- //TODO: remover este usuário de teste quando o auth estiver pronto
-  const user = await prisma.user.upsert({
-    where: { email: 'teste@gamelist.com' },
-    update: {},
-    create: {
-      name: 'Usuário de Teste',
-      email: 'teste@gamelist.com',
-      password: 'senha-falsa-apenas-para-teste',
-    },
-  });
-
-  console.log('Seed concluído. userId de teste:', user.id);
 }
 
-main()
-  .catch((e) => {
-    console.error(e);
-    process.exit(1);
-  })
-  .finally(() => prisma.$disconnect());
+void main();

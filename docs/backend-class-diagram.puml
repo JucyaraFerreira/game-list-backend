@@ -1,0 +1,235 @@
+@startuml
+title GameList Backend — Diagrama de Classes
+hide empty members
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+
+package "NestJS — aplicação" {
+  class AppModule <<module>>
+  class PrismaModule <<module>>
+  class AuthModule <<module>>
+  class GamesModule <<module>>
+  class PlatformsModule <<module>>
+
+  class AuthController <<controller>> {
+    +register(dto: RegisterDto)
+    +login(dto: LoginDto, request, response)
+    +me(user: PublicUser, request)
+    +logout(request, response)
+  }
+
+  class GamesController <<controller>> {
+    +create(user, dto: CreateGameDto)
+    +findAll(user)
+    +findOne(user, id)
+    +update(user, id, dto: UpdateGameDto)
+    +remove(user, id)
+    +updateStatus(user, id, dto: UpdateStatusDto)
+    +toggleFavorite(user, id)
+    +updateRating(user, id, dto: UpdateRatingDto)
+  }
+
+  class PlatformsController <<controller>> {
+    +findAll()
+  }
+
+  class AuthService <<service>> {
+    +register(dto: RegisterDto)
+    +login(dto: LoginDto)
+  }
+
+  class PasswordService <<service>> {
+    +hash(password): Promise~string~
+    +verify(password, hash): Promise~boolean~
+  }
+
+  class SessionsService <<service>> {
+    +create(userId): Promise~SessionCredential~
+    +resolve(token): Promise~ResolvedSession~
+    +revoke(token)
+  }
+
+  class SessionTransport <<service>> {
+    +loginTransport(request)
+    +readToken(request, tolerant)
+    +setCookie(response, token, expiresAt)
+    +clearCookie(response)
+  }
+
+  class SessionGuard <<guard>> {
+    +canActivate(context): Promise~boolean~
+  }
+
+  class GamesService <<service>> {
+    +create(userId, dto: CreateGameDto)
+    +findAll(userId)
+    +findOne(userId, id)
+    +update(userId, id, dto: UpdateGameDto)
+    +remove(userId, id)
+    +updateStatus(userId, id, dto: UpdateStatusDto)
+    +toggleFavorite(userId, id)
+    +updateRating(userId, id, dto: UpdateRatingDto)
+  }
+
+  class PlatformsService <<service>> {
+    +findAll()
+  }
+
+  class PrismaService <<service>> {
+    +onModuleInit()
+    +onModuleDestroy()
+  }
+
+  class RegisterDto <<DTO>> {
+    +name: string
+    +username: string
+    +email: string
+    +password: string
+  }
+
+  class LoginDto <<DTO>> {
+    +identifier: string
+    +password: string
+  }
+
+  class CreateGameDto <<DTO>>
+  class UpdateGameDto <<DTO>>
+  class UpdateStatusDto <<DTO>>
+  class UpdateRatingDto <<DTO>>
+
+  class PublicUser <<type>> {
+    +id: string
+    +name: string
+    +username: string | null
+    +email: string
+    +createdAt: string
+  }
+
+  class SessionCredential <<type>> {
+    +token: string
+    +expiresAt: Date
+  }
+
+  class ResolvedSession <<type>> {
+    +user: PublicUser
+    +sessionId: string
+    +expiresAt: Date
+  }
+}
+
+package "Prisma — banco de dados" {
+  enum GameStatus {
+    WISHLIST
+    PLAYING
+    PAUSED
+    COMPLETED
+  }
+
+  class User <<model>> {
+    +id: String
+    +name: String
+    +email: String <<unique>>
+    +username: String? <<unique>>
+    +password: String <<bcrypt hash>>
+    +createdAt: DateTime
+  }
+
+  class Session <<model>> {
+    +id: String
+    +userId: String
+    +tokenHash: String <<SHA-256, unique>>
+    +createdAt: DateTime
+    +expiresAt: DateTime
+  }
+
+  class Game <<model>> {
+    +id: String
+    +title: String
+    +developer: String?
+    +genre: String?
+    +status: GameStatus?
+    +favorite: Boolean
+    +rating: Int?
+    +coverUrl: String?
+    +createdAt: DateTime
+    +updatedAt: DateTime
+    +userId: String
+    +platformId: Int
+  }
+
+  class Platform <<model>> {
+    +id: Int
+    +name: String <<unique>>
+  }
+}
+
+AppModule o-- PrismaModule
+AppModule o-- AuthModule
+AppModule o-- GamesModule
+AppModule o-- PlatformsModule
+PrismaModule o-- PrismaService
+
+AuthModule o-- AuthController
+AuthModule o-- AuthService
+AuthModule o-- PasswordService
+AuthModule o-- SessionsService
+AuthModule o-- SessionTransport
+AuthModule o-- SessionGuard
+GamesModule o-- GamesController
+GamesModule o-- GamesService
+PlatformsModule o-- PlatformsController
+PlatformsModule o-- PlatformsService
+
+AuthController --> AuthService
+AuthController --> SessionsService
+AuthController --> SessionTransport
+AuthController ..> RegisterDto
+AuthController ..> LoginDto
+AuthController ..> PublicUser
+AuthService --> PasswordService
+AuthService --> SessionsService
+AuthService --> PrismaService
+AuthService ..> RegisterDto
+AuthService ..> LoginDto
+AuthService ..> PublicUser
+AuthService ..> User : persists bcrypt hash in password field
+SessionsService --> PrismaService
+SessionsService ..> SessionCredential : issues raw token once
+SessionsService ..> ResolvedSession : resolves token hash
+SessionsService ..> PublicUser
+SessionTransport ..> SessionCredential : sends token by cookie or response
+SessionGuard --> SessionsService
+SessionGuard --> SessionTransport
+SessionGuard ..> ResolvedSession : attaches to request
+
+GamesController --> GamesService
+GamesController ..> CreateGameDto
+GamesController ..> UpdateGameDto
+GamesController ..> UpdateStatusDto
+GamesController ..> UpdateRatingDto
+GamesService --> PrismaService
+GamesService ..> Game
+GamesService ..> Platform
+PlatformsController --> PlatformsService
+PlatformsService --> PrismaService
+PlatformsService ..> Platform
+
+User "1" -- "0..*" Session : owns
+User "1" -- "0..*" Game : owns
+Platform "1" -- "0..*" Game : used by
+Game ..> GameStatus
+
+note right of Session
+  O token aleatório é retornado
+  ao cliente uma vez. O banco guarda
+  somente seu hash SHA-256.
+  A sessão expira em 30 dias.
+end note
+
+note right of User
+  O campo password contém apenas
+  o hash bcrypt (cost 12), nunca
+  a senha em texto puro.
+end note
+
+@enduml
