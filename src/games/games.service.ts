@@ -84,8 +84,15 @@ export class GamesService {
   }
 
   async toggleFavorite(userId: string, id: string) {
-    const game = await this.findOne(userId, id);
-    return this.updateOwned(userId, id, { favorite: !game.favorite });
+    await this.findOne(userId, id);
+    try {
+      return await this.prisma.$transaction(async tx => {
+        await tx.$queryRaw`SELECT "id" FROM "User" WHERE "id" = ${userId} FOR UPDATE`;
+        const game = await tx.game.findFirst({ where: { id, userId } });
+        if (!game) throw new NotFoundException('Jogo não encontrado.');
+        return tx.game.update({ where: { id, userId }, data: { favorite: !game.favorite }, include: { platform: true } });
+      });
+    } catch (error) { this.rethrowMutationError(error); }
   }
 
   async updateRating(userId: string, id: string, dto: UpdateRatingDto) {
