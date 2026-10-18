@@ -2,7 +2,7 @@ import {
   Body, Controller, Delete, Get, HttpCode, HttpStatus, Inject, Param, ParseUUIDPipe, Patch, Post,
 } from '@nestjs/common';
 import {
-  ApiBadRequestResponse, ApiBearerAuth, ApiBody, ApiCookieAuth, ApiCreatedResponse, ApiNoContentResponse,
+  ApiBadRequestResponse, ApiBearerAuth, ApiBody, ApiConflictResponse, ApiCookieAuth, ApiCreatedResponse, ApiNoContentResponse,
   ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiTags, ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
@@ -24,6 +24,7 @@ export class GamesController {
   constructor(@Inject(GamesService) private readonly gamesService: GamesService) {}
 
   @Post()
+  @ApiConflictResponse({ description: 'Já existe um jogo com o mesmo título e plataforma na sua biblioteca.' })
   @ApiOperation({ summary: 'Cadastrar um jogo na biblioteca do usuário autenticado' })
   @ApiCreatedResponse({ description: 'Jogo criado com a plataforma. O proprietário é obtido exclusivamente da sessão.' })
   create(@CurrentUser() user: PublicUser, @Body() dto: CreateGameDto) {
@@ -46,6 +47,7 @@ export class GamesController {
   }
 
   @Patch(':id')
+  @ApiConflictResponse({ description: 'Já existe outro jogo com o mesmo título e plataforma na sua biblioteca.' })
   @ApiOperation({ summary: 'Editar os metadados de um jogo da própria biblioteca',
     description: 'Edita somente os campos enviados. Status, favorito e nota usam seus endpoints específicos. O proprietário não pode ser alterado.' })
   @ApiOkResponse({ description: 'Jogo atualizado com sua plataforma.' })
