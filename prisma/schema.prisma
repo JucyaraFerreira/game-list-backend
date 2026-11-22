@@ -16,14 +16,15 @@ enum GameStatus {
 }
 
 model User {
-  id            String         @id @default(uuid())
-  name          String
-  email         String         @unique
-  username      String?        @unique
-  password      String
-  createdAt     DateTime       @default(now())
-  games         Game[]
-  refreshTokens RefreshToken[]
+  id               String            @id @default(uuid())
+  name             String
+  email            String            @unique
+  username         String?           @unique
+  password         String
+  createdAt        DateTime          @default(now())
+  games            Game[]
+  refreshTokens    RefreshToken[]
+  userAchievements UserAchievement[]
 
   @@map("users")
 }
@@ -69,5 +70,56 @@ model Game {
   platformId Int
   platform   Platform @relation(fields: [platformId], references: [id])
 
+  // vínculo opcional com o catálogo compartilhado; jogos cadastrados à mão ficam sem conquistas
+  catalogGameId String?
+  catalogGame   CatalogGame? @relation(fields: [catalogGameId], references: [id], onDelete: SetNull)
+
+  achievements Achievement[]
+
+  @@index([catalogGameId])
   @@map("games")
+}
+
+// catálogo geral de jogos, igual para todas as contas
+model CatalogGame {
+  id           String        @id @default(uuid())
+  title        String        @unique
+  developer    String?
+  genre        String?
+  coverUrl     String?
+  games        Game[]
+  achievements Achievement[]
+
+  @@map("catalog_games")
+}
+
+// Conquista do catálogo (catalogGameId) ou criada pelo usuário em um jogo dele (gameId); exatamente um dos dois.
+model Achievement {
+  id            String            @id @default(uuid())
+  catalogGameId String?
+  gameId        String?
+  title         String
+  description   String?
+  xp            Int               @default(0)
+  catalogGame   CatalogGame?      @relation(fields: [catalogGameId], references: [id], onDelete: Cascade)
+  game          Game?             @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  unlocks       UserAchievement[]
+
+  @@unique([catalogGameId, title])
+  @@unique([gameId, title])
+  @@index([gameId])
+  @@map("achievements")
+}
+
+// conquista desbloqueada por um usuário; a ausência da linha significa bloqueada
+model UserAchievement {
+  userId        String
+  achievementId String
+  unlockedAt    DateTime    @default(now())
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievement   Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+
+  @@id([userId, achievementId])
+  @@index([achievementId])
+  @@map("user_achievements")
 }
