@@ -1,7 +1,8 @@
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import { createHash, randomBytes } from 'node:crypto';
 import { PrismaService } from '../prisma/prisma.service';
-import type { ResolvedSession, SessionCredential } from './auth.types';
+import type { AuthTokens, ResolvedSession } from './auth.types';
 import { toPublicUser } from './auth.types';
 
 function isSessionToken(token: unknown): token is string {
@@ -42,5 +43,9 @@ export class SessionsService {
     const expiresAt = new Date(Date.now() + 2_592_000_000);
     await this.prisma.session.create({ data: { userId, tokenHash, expiresAt } });
     return { token, expiresAt };
+    await this.prisma.refreshToken.deleteMany({ where: { expiresAt: { lte: new Date() } } });
+    await this.prisma.refreshToken.create({ data: { userId, tokenHash: hash(refreshToken), expiresAt: refreshExpiresAt } });
+    const session = await this.prisma.refreshToken.findUnique({ where: { tokenHash }, select: { userId: true, expiresAt: true } });
+    const { count } = await this.prisma.refreshToken.deleteMany({ where: { tokenHash } });
   }
 }
