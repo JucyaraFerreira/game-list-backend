@@ -44,16 +44,18 @@ package "NestJS — aplicação" {
   }
 
   class SessionsService <<service>> {
-    +create(userId): Promise~SessionCredential~
-    +resolve(token): Promise~ResolvedSession~
-    +revoke(token)
+    +create(userId): Promise~AuthTokens~
+    +refresh(refreshToken): Promise~AuthTokens~
+    +resolve(accessToken): Promise~ResolvedSession~
+    +revoke(refreshToken)
   }
 
   class SessionTransport <<service>> {
     +loginTransport(request)
-    +readToken(request, tolerant)
-    +setCookie(response, token, expiresAt)
-    +clearCookie(response)
+    +readAccessToken(request)
+    +readRefreshToken(request, bodyToken)
+    +setCookies(response, tokens)
+    +clearCookies(response)
   }
 
   class SessionGuard <<guard>> {
@@ -105,14 +107,15 @@ package "NestJS — aplicação" {
     +createdAt: string
   }
 
-  class SessionCredential <<type>> {
-    +token: string
+  class AuthTokens <<type>> {
+    +accessToken: string
+    +refreshToken: string
     +expiresAt: Date
+    +refreshExpiresAt: Date
   }
 
   class ResolvedSession <<type>> {
     +user: PublicUser
-    +sessionId: string
     +expiresAt: Date
   }
 }
@@ -134,7 +137,7 @@ package "Prisma — banco de dados" {
     +createdAt: DateTime
   }
 
-  class Session <<model>> {
+  class RefreshToken <<model>> {
     +id: String
     +userId: String
     +tokenHash: String <<SHA-256, unique>>
@@ -194,10 +197,10 @@ AuthService ..> LoginDto
 AuthService ..> PublicUser
 AuthService ..> User : persists bcrypt hash in password field
 SessionsService --> PrismaService
-SessionsService ..> SessionCredential : issues raw token once
-SessionsService ..> ResolvedSession : resolves token hash
+SessionsService ..> AuthTokens : issues JWT and refresh token
+SessionsService ..> ResolvedSession : verifies JWT
 SessionsService ..> PublicUser
-SessionTransport ..> SessionCredential : sends token by cookie or response
+SessionTransport ..> AuthTokens : sends tokens by cookie or response
 SessionGuard --> SessionsService
 SessionGuard --> SessionTransport
 SessionGuard ..> ResolvedSession : attaches to request
@@ -214,16 +217,19 @@ PlatformsController --> PlatformsService
 PlatformsService --> PrismaService
 PlatformsService ..> Platform
 
-User "1" -- "0..*" Session : owns
+User "1" -- "0..*" RefreshToken : owns
 User "1" -- "0..*" Game : owns
 Platform "1" -- "0..*" Game : used by
 Game ..> GameStatus
 
-note right of Session
-  O token aleatório é retornado
-  ao cliente uma vez. O banco guarda
-  somente seu hash SHA-256.
-  A sessão expira em 30 dias.
+note right of RefreshToken
+  O refresh token aleatório é retornado
+  ao cliente uma vez e é de uso único
+  (rotação). O banco guarda somente
+  seu hash SHA-256. Expira em 30 dias; linhas expiradas
+  são apagadas a cada novo login.
+  O access token JWT (15 min) não é
+  armazenado.
 end note
 
 note right of User

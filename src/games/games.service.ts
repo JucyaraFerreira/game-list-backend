@@ -13,7 +13,7 @@ export class GamesService {
   async create(userId: string, dto: CreateGameDto) {
     await this.ensurePlatformExists(dto.platformId);
     return this.prisma.$transaction(async tx => {
-      await tx.$queryRaw`SELECT "id" FROM "User" WHERE "id" = ${userId} FOR UPDATE`;
+      await tx.$queryRaw`SELECT "id" FROM "users" WHERE "id" = ${userId} FOR UPDATE`;
       await this.ensureUnique(tx, userId, dto.title, dto.platformId);
       return tx.game.create({
         data: {
@@ -53,7 +53,7 @@ export class GamesService {
     if (dto.title === undefined && dto.platformId === undefined) return this.updateOwned(userId, id, data);
     try {
       return await this.prisma.$transaction(async tx => {
-        await tx.$queryRaw`SELECT "id" FROM "User" WHERE "id" = ${userId} FOR UPDATE`;
+        await tx.$queryRaw`SELECT "id" FROM "users" WHERE "id" = ${userId} FOR UPDATE`;
         const current = await tx.game.findFirst({ where: { id, userId } });
         if (!current) throw new NotFoundException('Jogo não encontrado.');
         await this.ensureUnique(tx, userId, dto.title ?? current.title, dto.platformId ?? current.platformId, id);
@@ -87,7 +87,7 @@ export class GamesService {
     await this.findOne(userId, id);
     try {
       return await this.prisma.$transaction(async tx => {
-        await tx.$queryRaw`SELECT "id" FROM "User" WHERE "id" = ${userId} FOR UPDATE`;
+        await tx.$queryRaw`SELECT "id" FROM "users" WHERE "id" = ${userId} FOR UPDATE`;
         const game = await tx.game.findFirst({ where: { id, userId } });
         if (!game) throw new NotFoundException('Jogo não encontrado.');
         return tx.game.update({ where: { id, userId }, data: { favorite: !game.favorite }, include: { platform: true } });

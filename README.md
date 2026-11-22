@@ -35,6 +35,7 @@ Abra o `.env` e troque o valor pela string recebida, **inteira**, entre aspas du
 DATABASE_URL="COLE_AQUI_A_STRING_RECEBIDA"
 AUTH_ALLOWED_ORIGINS=http://localhost:8081,http://127.0.0.1:8081,http://localhost:3000,http://127.0.0.1:3000
 AUTH_COOKIE_SAME_SITE=lax
+JWT_SECRET=troque-por-uma-string-aleatoria-com-32-ou-mais-caracteres
 ```
 
 - Sem espaços ao redor do `=` e sem vírgula no final.
@@ -89,11 +90,11 @@ npx prisma studio --config prisma7.config.ts
 No SQL Editor do Neon, os nomes das tabelas precisam de aspas duplas:
 
 ```sql
-SELECT * FROM "Platform";
-SELECT id, name, email FROM "User";
+SELECT * FROM "platforms";
+SELECT id, name, email FROM "users";
 ```
 
-(Evite `SELECT *` em `User` ao compartilhar a tela: a coluna `password` aparece.)
+(Evite `SELECT *` em `users` ao compartilhar a tela: a coluna `password` aparece.)
 
 ### Cuidados com o banco compartilhado
 
@@ -109,9 +110,10 @@ As rotas de jogos exigem autenticação. O proprietário é identificado pela se
 | Método | Rota | Acesso | Descrição |
 |---|---|---|---|
 | POST | `/auth/register` | Público | Cria conta; retorna `202` com a mesma mensagem para contas novas e duplicadas. Não inicia sessão. |
-| POST | `/auth/login` | Público | Entra com e-mail ou nome de usuário. Por padrão define cookie HttpOnly; use `X-Auth-Transport: bearer` para receber token Bearer no corpo. |
-| GET | `/auth/me` | Sessão | Retorna o usuário autenticado e a expiração da sessão. |
-| POST | `/auth/logout` | Público | Revoga a sessão apresentada e limpa o cookie; retorna `204`. |
+| POST | `/auth/login` | Público | Entra com e-mail ou nome de usuário. Por padrão define cookie HttpOnly; use `X-Auth-Transport: bearer` para receber `accessToken` (JWT) e `refreshToken` no corpo. |
+| POST | `/auth/refresh` | Público | Troca o refresh token (cookie ou `refreshToken` no corpo) por um novo par; o anterior é consumido. |
+| GET | `/auth/me` | Sessão | Retorna o usuário autenticado e a expiração do access token. |
+| POST | `/auth/logout` | Público | Revoga o refresh token apresentado (cookie ou corpo) e limpa os cookies; retorna `204`. |
 | GET | `/platforms` | Público | Lista as plataformas disponíveis. |
 | POST | `/games` | Sessão | Adiciona um jogo à biblioteca do usuário; retorna `201`. |
 | GET | `/games` | Sessão | Lista os jogos da biblioteca do usuário. |
@@ -122,7 +124,7 @@ As rotas de jogos exigem autenticação. O proprietário é identificado pela se
 | PATCH | `/games/:id/rating` | Sessão | Atualiza a nota (0 a 5). |
 | DELETE | `/games/:id` | Sessão | Remove o jogo da biblioteca; retorna `204`. |
 
-Para sessão por cookie, o cliente deve enviar cookies nas requisições. Clientes nativos usam o token retornado pelo login com `Authorization: Bearer <token>`. A sessão expira após 30 dias.
+Para sessão por cookie, o cliente deve enviar cookies nas requisições. Clientes nativos usam o `accessToken` com `Authorization: Bearer <token>` e guardam o `refreshToken`. O access token expira em 15 minutos; o refresh token, em 30 dias e só vale uma vez (rotação em `/auth/refresh`).
 
 Respostas comuns: `400` (validação), `401` (sessão ou credenciais inválidas), `403` (origem/CSRF), `404` (jogo ausente ou de outra conta), `409` (jogo duplicado) e `429` (limite de tentativas).
 

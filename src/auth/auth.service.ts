@@ -6,7 +6,7 @@ import { isBcryptHash, PasswordService } from './password.service';
 import { SessionsService } from './sessions.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
-import type { PublicUser, SessionCredential } from './auth.types';
+import type { PublicUser, AuthTokens } from './auth.types';
 import { toPublicUser } from './auth.types';
 
 // Hash de um valor aleatório descartado, usado somente para igualar o trabalho
@@ -21,12 +21,12 @@ export class AuthService {
     @Inject(SessionsService) private readonly sessions: SessionsService,
   ) {}
 
-  async login(dto: LoginDto): Promise<SessionCredential & { user: PublicUser }> {
+  async login(dto: LoginDto): Promise<AuthTokens & { user: PublicUser }> {
     const identifier = dto.identifier.trim().toLowerCase();
     const user = identifier.includes('@')
       ? (await this.prisma.$queryRaw<User[]>`
           SELECT "id", "name", "username", "email", "password", "createdAt"
-          FROM "User" WHERE lower(btrim("email")) = ${identifier} LIMIT 1
+          FROM "users" WHERE lower(btrim("email")) = ${identifier} LIMIT 1
         `)[0]
       : await this.prisma.user.findUnique({ where: { username: identifier } });
     const usablePassword = user && isBcryptHash(user.password);

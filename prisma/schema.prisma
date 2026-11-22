@@ -16,17 +16,19 @@ enum GameStatus {
 }
 
 model User {
-  id        String    @id @default(uuid())
-  name      String
-  email     String    @unique
-  username  String?   @unique
-  password  String
-  createdAt DateTime  @default(now())
-  games     Game[]
-  sessions  Session[]
+  id            String         @id @default(uuid())
+  name          String
+  email         String         @unique
+  username      String?        @unique
+  password      String
+  createdAt     DateTime       @default(now())
+  games         Game[]
+  refreshTokens RefreshToken[]
+
+  @@map("users")
 }
 
-model Session {
+model RefreshToken {
   id        String   @id @default(uuid())
   userId    String
   tokenHash String   @unique
@@ -36,6 +38,7 @@ model Session {
 
   @@index([userId])
   @@index([expiresAt])
+  @@map("refresh_tokens")
 }
 
 // a plataforma vai ser guardada apenas uma vez e cada jogo vai apontar para uma. 
@@ -44,6 +47,8 @@ model Platform {
   id    Int    @id @default(autoincrement())
   name  String @unique
   games Game[]
+
+  @@map("platforms")
 }
 
 model Game {
@@ -63,4 +68,6 @@ model Game {
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   platformId Int
   platform   Platform @relation(fields: [platformId], references: [id])
+
+  @@map("games")
 }

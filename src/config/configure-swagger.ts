@@ -4,12 +4,12 @@ import { SessionTransport } from '../auth/transport/session-transport';
 
 export function configureSwagger(app: INestApplication) {
   const config = new DocumentBuilder().setTitle('Game List API')
-    .setDescription('API para organizar a biblioteca pessoal de jogos. Autenticação por sessão opaca, sem JWT. '
+    .setDescription('API para organizar a biblioteca pessoal de jogos. Autenticação por access token JWT (15 min) e refresh token opaco com rotação (30 dias). '
       + 'Na Web, POST /auth/login usa cookie HttpOnly por padrão. No app nativo, envie X-Auth-Transport: bearer '
-      + 'e use o token retornado no botão Authorize. Cadastro e login: 10 tentativas por minuto por IP, por instância. '
+      + 'e use o accessToken retornado no botão Authorize; renove com POST /auth/refresh. Cadastro, login e refresh: 10 tentativas por minuto por IP, por instância. '
       + 'Respostas de autenticação usam Cache-Control: no-store.')
     .setVersion('1.0')
-    .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'Opaque session token' }, 'sessionBearer')
+    .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT' }, 'sessionBearer')
     .addCookieAuth(app.get(SessionTransport).cookieName, { type: 'apiKey', in: 'cookie' }, 'sessionCookie')
     .build();
   const document = SwaggerModule.createDocument(app, config);
