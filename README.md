@@ -90,11 +90,11 @@ npx prisma studio --config prisma7.config.ts
 No SQL Editor do Neon, os nomes das tabelas precisam de aspas duplas:
 
 ```sql
-SELECT * FROM "Platform";
-SELECT id, name, email FROM "User";
+SELECT * FROM "platforms";
+SELECT id, name, email FROM "users";
 ```
 
-(Evite `SELECT *` em `User` ao compartilhar a tela: a coluna `password` aparece.)
+(Evite `SELECT *` em `users` ao compartilhar a tela: a coluna `password` aparece.)
 
 ### Cuidados com o banco compartilhado
 

@@ -26,7 +26,7 @@ export class AuthService {
     const user = identifier.includes('@')
       ? (await this.prisma.$queryRaw<User[]>`
           SELECT "id", "name", "username", "email", "password", "createdAt"
-          FROM "User" WHERE lower(btrim("email")) = ${identifier} LIMIT 1
+          FROM "users" WHERE lower(btrim("email")) = ${identifier} LIMIT 1
         `)[0]
       : await this.prisma.user.findUnique({ where: { username: identifier } });
     const usablePassword = user && isBcryptHash(user.password);
