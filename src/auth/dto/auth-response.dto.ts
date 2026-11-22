@@ -15,14 +15,17 @@ export class RegistrationResponseDto {
 
 export class SessionResponseDto {
   @ApiProperty({ type: PublicUserDto }) user: PublicUserDto;
-  @ApiProperty({ format: 'date-time', description: 'Expiração absoluta da sessão, 30 dias após o login.' }) expiresAt: string;
+  @ApiProperty({ format: 'date-time', description: 'Expiração do access token (15 minutos). Renove com POST /auth/refresh.' }) expiresAt: string;
 }
 
-export class LoginResponseDto extends SessionResponseDto {
-  @ApiPropertyOptional({
-    minLength: 43, maxLength: 43, readOnly: true,
-    description: 'Token opaco, retornado somente quando X-Auth-Transport é bearer. No modo cookie, é omitido.',
-  }) token?: string;
+export class TokensResponseDto {
+  @ApiProperty({ format: 'date-time', description: 'Expiração do access token (15 minutos).' }) expiresAt: string;
+  @ApiPropertyOptional({ readOnly: true, description: 'JWT de acesso, retornado somente quando X-Auth-Transport é bearer (ou refreshToken vai no corpo do refresh). No modo cookie, é omitido.' }) accessToken?: string;
+  @ApiPropertyOptional({ minLength: 43, maxLength: 43, readOnly: true, description: 'Token opaco de renovação (30 dias, uso único). Mesma regra de transporte do accessToken.' }) refreshToken?: string;
+}
+
+export class LoginResponseDto extends TokensResponseDto {
+  @ApiProperty({ type: PublicUserDto }) user: PublicUserDto;
 }
 
 export class AuthErrorDto {

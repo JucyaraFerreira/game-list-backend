@@ -15,7 +15,7 @@ export class SessionGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     if (this.reflector.getAllAndOverride<boolean>(IS_PUBLIC, [context.getHandler(), context.getClass()])) return true;
     const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
-    const token = this.transport.readToken(request);
+    const token = this.transport.readAccessToken(request);
     if (!token) throw new UnauthorizedException('Sessão inválida ou expirada.');
     request.auth = await this.sessions.resolve(token);
     return true;

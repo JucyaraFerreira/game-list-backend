@@ -6,8 +6,9 @@ export type PublicUser = {
   createdAt: string;
 };
 
-export type SessionCredential = { token: string; expiresAt: Date };
-export type ResolvedSession = { user: PublicUser; sessionId: string; expiresAt: Date };
+// expiresAt é a expiração do access token; refreshExpiresAt, a do refresh token.
+export type AuthTokens = { accessToken: string; refreshToken: string; expiresAt: Date; refreshExpiresAt: Date };
+export type ResolvedSession = { user: PublicUser; expiresAt: Date };
 
 export function toPublicUser(user: Omit<PublicUser, 'createdAt'> & { createdAt: Date }): PublicUser {
   return {
