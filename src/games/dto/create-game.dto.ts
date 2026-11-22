@@ -7,22 +7,30 @@ import {
     IsNotEmpty,
     IsOptional,
     IsString,
+    IsUUID,
+    ValidateIf,
     IsUrl,
     Max,
     Min,
 } from 'class-validator';
 
 export class CreateGameDto {
-    @ApiProperty({ example: 'The Last of Us Part II'})
+    @ApiPropertyOptional({ example: 'The Last of Us Part II', description: 'Obrigatório sem catalogGameId. Com catalogGameId, título, desenvolvedora, gênero e capa vêm do catálogo e este campo é ignorado.' })
     @Transform(({ value }: { value: unknown }) => typeof value === 'string' ? value.trim() : value)
+    @ValidateIf((dto: CreateGameDto) => dto.catalogGameId === undefined)
     @IsString()
     @IsNotEmpty()
-    title: string;
+    title?: string;
 
     @ApiProperty({ example: 1, description: 'ID da plataforma'})
     @IsInt()
     @Min(1)
     platformId: number;
+
+    @ApiPropertyOptional({ format: 'uuid', description: 'ID de um jogo do catálogo (GET /catalog/games). Habilita as conquistas do jogo.' })
+    @IsOptional()
+    @IsUUID()
+    catalogGameId?: string;
 
     @ApiPropertyOptional({ type: String, example: 'Naughty Dog', nullable: true })
     @IsOptional()

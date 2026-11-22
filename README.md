@@ -115,7 +115,8 @@ As rotas de jogos exigem autenticação. O proprietário é identificado pela se
 | GET | `/auth/me` | Sessão | Retorna o usuário autenticado e a expiração do access token. |
 | POST | `/auth/logout` | Público | Revoga o refresh token apresentado (cookie ou corpo) e limpa os cookies; retorna `204`. |
 | GET | `/platforms` | Público | Lista as plataformas disponíveis. |
-| POST | `/games` | Sessão | Adiciona um jogo à biblioteca do usuário; retorna `201`. |
+| GET | `/catalog/games` | Sessão | Busca jogos do catálogo compartilhado (`?search=`, até 50). Use o `id` em `catalogGameId` ao criar um jogo. |
+| POST | `/games` | Sessão | Adiciona um jogo à biblioteca do usuário; retorna `201`. Com `catalogGameId`, título, desenvolvedora, gênero e capa vêm do catálogo; sem ele, o jogo é privado da conta e `title` é obrigatório. |
 | GET | `/games` | Sessão | Lista os jogos da biblioteca do usuário. |
 | GET | `/games/:id` | Sessão | Consulta um jogo da própria biblioteca. |
 | PATCH | `/games/:id` | Sessão | Atualiza os metadados do jogo. |
@@ -123,6 +124,11 @@ As rotas de jogos exigem autenticação. O proprietário é identificado pela se
 | PATCH | `/games/:id/favorite` | Sessão | Alterna favorito. |
 | PATCH | `/games/:id/rating` | Sessão | Atualiza a nota (0 a 5). |
 | DELETE | `/games/:id` | Sessão | Remove o jogo da biblioteca; retorna `204`. |
+| GET | `/games/:id/achievements` | Sessão | Lista as conquistas do jogo (catálogo, se houver `catalogGameId`, mais as próprias) com `unlocked`. |
+| POST | `/games/:id/achievements` | Sessão | Cria uma conquista própria no jogo (`title`, `description`, `xp`), com ou sem catálogo; `409` se o título repetir. |
+| GET | `/games/:id/achievements/progress` | Sessão | Retorna `unlocked`, `total`, `percent`, `xp` e `totalXp`. |
+| PUT | `/games/:id/achievements/:achievementId` | Sessão | Marca a conquista como desbloqueada (idempotente). |
+| DELETE | `/games/:id/achievements/:achievementId` | Sessão | Desmarca a conquista; retorna `204` (idempotente). |
 
 Para sessão por cookie, o cliente deve enviar cookies nas requisições. Clientes nativos usam o `accessToken` com `Authorization: Bearer <token>` e guardam o `refreshToken`. O access token expira em 15 minutos; o refresh token, em 30 dias e só vale uma vez (rotação em `/auth/refresh`).
 

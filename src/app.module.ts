@@ -7,6 +7,7 @@ import { GamesModule } from './games/games.module';
 import { GamesService } from './games/games.service'
 import { PlatformsModule } from './platforms/platforms.module';
 import { AuthModule } from './auth/auth.module';
+import { CatalogModule } from './catalog/catalog.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { AuthModule } from './auth/auth.module';
     AuthModule,
     GamesModule,
     PlatformsModule,
+    CatalogModule,
   ],
   controllers: [AppController],
   providers: [AppService, GamesService],

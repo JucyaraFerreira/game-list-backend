@@ -12,14 +12,19 @@ export class GamesService {
 
   async create(userId: string, dto: CreateGameDto) {
     await this.ensurePlatformExists(dto.platformId);
+    // Jogo do catálogo: os dados vêm do catálogo, para todos verem o mesmo título. Jogo manual fica privado na conta.
+    const catalog = dto.catalogGameId ? await this.findCatalogGame(dto.catalogGameId) : null;
+    const title = (catalog?.title ?? dto.title ?? '').trim();
     return this.prisma.$transaction(async tx => {
       await tx.$queryRaw`SELECT "id" FROM "users" WHERE "id" = ${userId} FOR UPDATE`;
-      await this.ensureUnique(tx, userId, dto.title, dto.platformId);
+      await this.ensureUnique(tx, userId, title, dto.platformId);
       return tx.game.create({
         data: {
-          title: dto.title.trim(), platformId: dto.platformId, userId,
-          developer: dto.developer, genre: dto.genre, coverUrl: dto.coverUrl,
-          status: dto.status, rating: dto.rating,
+          title, platformId: dto.platformId, userId,
+          developer: catalog ? catalog.developer : dto.developer,
+          genre: catalog ? catalog.genre : dto.genre,
+          coverUrl: catalog ? catalog.coverUrl : dto.coverUrl,
+          status: dto.status, rating: dto.rating, catalogGameId: dto.catalogGameId,
         },
         include: { platform: true },
       });
@@ -103,6 +108,12 @@ export class GamesService {
   private async ensurePlatformExists(id: number) {
     const platform = await this.prisma.platform.findUnique({ where: { id } });
     if (!platform) throw new BadRequestException('Plataforma não encontrada.');
+  }
+
+  private async findCatalogGame(id: string) {
+    const game = await this.prisma.catalogGame.findUnique({ where: { id } });
+    if (!game) throw new BadRequestException('Jogo do catálogo não encontrado.');
+    return game;
   }
 
   private async updateOwned(userId: string, id: string, data: Prisma.GameUncheckedUpdateInput) {
