@@ -36,6 +36,9 @@ DATABASE_URL="COLE_AQUI_A_STRING_RECEBIDA"
 AUTH_ALLOWED_ORIGINS=http://localhost:8081,http://127.0.0.1:8081,http://localhost:3000,http://127.0.0.1:3000
 AUTH_COOKIE_SAME_SITE=lax
 JWT_SECRET=troque-por-uma-string-aleatoria-com-32-ou-mais-caracteres
+SUPABASE_URL=https://SEU_PROJETO.supabase.co
+SUPABASE_SERVICE_KEY=sua-secret-key-do-supabase
+SUPABASE_BUCKET=covers
 ```
 
 - Sem espaços ao redor do `=` e sem vírgula no final.
@@ -124,6 +127,7 @@ As rotas de jogos exigem autenticação. O proprietário é identificado pela se
 | PATCH | `/games/:id/favorite` | Sessão | Alterna favorito. |
 | PATCH | `/games/:id/rating` | Sessão | Atualiza a nota (0 a 5). |
 | DELETE | `/games/:id` | Sessão | Remove o jogo da biblioteca; retorna `204`. |
+| PUT | `/games/:id/cover` | Sessão | Envia a capa (`multipart/form-data`, campo `file`; JPEG, PNG ou WebP de até 2 MB). Guarda no Supabase Storage e salva a URL pública em `coverUrl`. |
 | GET | `/games/:id/achievements` | Sessão | Lista as conquistas do jogo (catálogo, se houver `catalogGameId`, mais as próprias) com `unlocked`. |
 | POST | `/games/:id/achievements` | Sessão | Cria uma conquista própria no jogo (`title`, `description`, `xp`), com ou sem catálogo; `409` se o título repetir. |
 | GET | `/games/:id/achievements/progress` | Sessão | Retorna `unlocked`, `total`, `percent`, `xp` e `totalXp`. |
