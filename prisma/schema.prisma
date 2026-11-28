@@ -83,6 +83,7 @@ model Game {
 // catálogo geral de jogos, igual para todas as contas
 model CatalogGame {
   id           String        @id @default(uuid())
+  igdbId       Int?          @unique
   title        String        @unique
   developer    String?
   genre        String?

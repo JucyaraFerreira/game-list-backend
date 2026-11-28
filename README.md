@@ -39,6 +39,9 @@ JWT_SECRET=troque-por-uma-string-aleatoria-com-32-ou-mais-caracteres
 SUPABASE_URL=https://SEU_PROJETO.supabase.co
 SUPABASE_SERVICE_KEY=sua-secret-key-do-supabase
 SUPABASE_BUCKET=covers
+IGDB_CLIENT_ID=seu-client-id-da-twitch
+IGDB_CLIENT_SECRET=seu-client-secret-da-twitch
+STEAM_API_KEY=sua-chave-da-steam-opcional
 ```
 
 - Sem espaços ao redor do `=` e sem vírgula no final.
@@ -118,7 +121,8 @@ As rotas de jogos exigem autenticação. O proprietário é identificado pela se
 | GET | `/auth/me` | Sessão | Retorna o usuário autenticado e a expiração do access token. |
 | POST | `/auth/logout` | Público | Revoga o refresh token apresentado (cookie ou corpo) e limpa os cookies; retorna `204`. |
 | GET | `/platforms` | Público | Lista as plataformas disponíveis. |
-| GET | `/catalog/games` | Sessão | Busca jogos do catálogo compartilhado (`?search=`, até 50). Use o `id` em `catalogGameId` ao criar um jogo. |
+| GET | `/catalog/games` | Sessão | Busca jogos do catálogo compartilhado (`?search=`, até 50). Com `search`, inclui jogos da IGDB ainda não importados (`id` nulo, com `igdbId`); se a IGDB falhar, devolve só o catálogo local. Use o `id` em `catalogGameId` ao criar um jogo. |
+| POST | `/catalog/games/:igdbId/import` | Sessão | Importa um jogo da IGDB (dados e capa) para o catálogo e devolve o jogo com seu `id`. As conquistas vêm da Steam, quando o jogo tem ID da Steam e `STEAM_API_KEY` está definida. Pode ser repetido sem duplicar; `502` se a IGDB falhar. |
 | POST | `/games` | Sessão | Adiciona um jogo à biblioteca do usuário; retorna `201`. Com `catalogGameId`, título, desenvolvedora, gênero e capa vêm do catálogo; sem ele, o jogo é privado da conta e `title` é obrigatório. |
 | GET | `/games` | Sessão | Lista os jogos da biblioteca do usuário. |
 | GET | `/games/:id` | Sessão | Consulta um jogo da própria biblioteca. |
