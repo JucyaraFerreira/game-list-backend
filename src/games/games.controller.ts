@@ -1,8 +1,9 @@
 import {
-  Body, Controller, Delete, Get, HttpCode, HttpStatus, Inject, Param, ParseUUIDPipe, Patch, Post,
+  Body, Controller, Delete, Get, HttpCode, HttpStatus, Inject, Param, ParseUUIDPipe, Patch, Post, Put, UploadedFile, UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import {
-  ApiBadRequestResponse, ApiBearerAuth, ApiBody, ApiConflictResponse, ApiCookieAuth, ApiCreatedResponse, ApiNoContentResponse,
+  ApiBadRequestResponse, ApiBearerAuth, ApiBody, ApiConflictResponse, ApiConsumes, ApiCookieAuth, ApiCreatedResponse, ApiNoContentResponse,
   ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiTags, ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
@@ -72,6 +73,17 @@ export class GamesController {
   @ApiNotFoundResponse({ description: 'Jogo ausente ou pertencente a outra conta.' })
   updateStatus(@CurrentUser() user: PublicUser, @Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateStatusDto) {
     return this.gamesService.updateStatus(user.id, id, dto);
+  }
+
+  @Put(':id/cover')
+  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 2 * 1024 * 1024, files: 1 } }))
+  @ApiOperation({ summary: 'Enviar a capa de um jogo da própria biblioteca', description: 'Imagem JPEG, PNG ou WebP de até 2 MB, no campo file. Fica no Supabase Storage e a URL pública vai para coverUrl; a capa anterior é apagada.' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({ schema: { type: 'object', required: ['file'], properties: { file: { type: 'string', format: 'binary' } } } })
+  @ApiOkResponse({ description: 'Jogo atualizado com a nova coverUrl.' })
+  @ApiNotFoundResponse({ description: 'Jogo ausente ou pertencente a outra conta.' })
+  setCover(@CurrentUser() user: PublicUser, @Param('id', ParseUUIDPipe) id: string, @UploadedFile() file?: { buffer: Buffer }) {
+    return this.gamesService.setCover(user.id, id, file);
   }
 
   @Patch(':id/favorite')

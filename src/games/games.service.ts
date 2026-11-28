@@ -5,10 +5,14 @@ import { CreateGameDto } from './dto/create-game.dto';
 import { UpdateGameDto } from './dto/update-game.dto';
 import { UpdateRatingDto } from './dto/update-rating.dto';
 import { UpdateStatusDto } from './dto/update-status.dto';
+import { StorageService, detectImage } from '../storage/storage.service';
 
 @Injectable()
 export class GamesService {
-  constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
+  constructor(
+    @Inject(PrismaService) private readonly prisma: PrismaService,
+    @Inject(StorageService) private readonly storage: StorageService,
+  ) {}
 
   async create(userId: string, dto: CreateGameDto) {
     await this.ensurePlatformExists(dto.platformId);
@@ -75,11 +79,28 @@ export class GamesService {
   }
 
   async remove(userId: string, id: string) {
-    await this.findOne(userId, id);
+    const game = await this.findOne(userId, id);
     try {
       await this.prisma.game.delete({ where: { id, userId } });
     } catch (error) {
       this.rethrowMutationError(error);
+    }
+    await this.storage.remove(game.coverUrl);
+  }
+
+  // A capa vai para o Supabase Storage e a URL pública fica em coverUrl; a capa anterior é apagada.
+  async setCover(userId: string, id: string, file?: { buffer: Buffer }) {
+    const game = await this.findOne(userId, id);
+    const image = file && detectImage(file.buffer);
+    if (!file || !image) throw new BadRequestException('Envie uma imagem JPEG, PNG ou WebP no campo "file".');
+    const coverUrl = await this.storage.upload(`${userId}/${id}-${Date.now()}.${image.ext}`, file.buffer, image.type);
+    try {
+      const updated = await this.updateOwned(userId, id, { coverUrl });
+      await this.storage.remove(game.coverUrl);
+      return updated;
+    } catch (error) {
+      await this.storage.remove(coverUrl);
+      throw error;
     }
   }
 

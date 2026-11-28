@@ -4,7 +4,6 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaModule } from './prisma/prisma.module';
 import { GamesModule } from './games/games.module';
-import { GamesService } from './games/games.service'
 import { PlatformsModule } from './platforms/platforms.module';
 import { AuthModule } from './auth/auth.module';
 import { CatalogModule } from './catalog/catalog.module';
@@ -19,6 +18,6 @@ import { CatalogModule } from './catalog/catalog.module';
     CatalogModule,
   ],
   controllers: [AppController],
-  providers: [AppService, GamesService],
+  providers: [AppService],
 })
 export class AppModule {}
